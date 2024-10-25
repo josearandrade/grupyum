@@ -4,15 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Carregar a imagem TIFF em formato RGB
-def load_image_rgb(img_path):
-    image = cv2.imread(img_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    return image
+def load_image_rgb(img_paths):
+    images = []
+    
+    # Carregar e converter cada imagem em RGB
+    for img_path in img_paths:
+        image = cv2.imread(img_path)
+        if image is not None:  # Verifica se a imagem foi carregada corretamente
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            images.append(image_rgb)  # Adiciona a imagem convertida à lista
+        else:
+            print(f"Erro ao carregar a imagem: {img_path}")
+
+    return images  # Retorna a lista de imagens
 
 # Definir os limites para o color thresholding (R, G, B)
 def color_thresholding_limits(lowerRed, lowerGreen, lowerBlue, upperRed, upperGreen, upperBlue):
     lower_bound = np.array([lowerRed, lowerGreen, lowerBlue])
-    upper_bound = np.array([upperRed, upperGreen, upperBlue]) 
+    upper_bound = np.array([upperRed, upperGreen, upperBlue])
     return lower_bound, upper_bound
 
 # Aplicar o threshold usando cv2.inRange para filtrar a cor
@@ -31,54 +40,49 @@ def plot_img(image, width, height):
     plt.axis('off')
     plt.show()
 
+def processing_img(image, canny_lower, canny_upper, perimeter_min, perimeter_max, min_circularity):
+    # Converter a imagem para escala de cinza   
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+    # Aplicar desfoque gaussiano
+    blur = cv2.GaussianBlur(gray, (11, 11), 0)
 
+    # Aplicar o detector de bordas Canny
+    ##### (adicionar if para a opção selecionada) ######
+    canny = cv2.Canny(blur, canny_lower, canny_upper, apertureSize=3)
 
+    # Dilatar as bordas para conectar regiões
+    dilated = cv2.dilate(canny, (1, 1), iterations=0)
 
+    # Encontrar os contornos na imagem dilatada
+    (cnt, hierarchy) = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
+    # Parâmetros para o filtro de tamanho (em pixels)
+    #min_area = 0  # Tamanho mínimo para uma célula (ajustado para marrons)
+    #max_area = 100  # Tamanho máximo para uma célula (ajustado para azuis)
+    #min_circularity = 0.01 # Circularidade mínima (1 = círculo perfeito)
 
-
-# Converter a imagem para escala de cinza
-gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-
-# Aplicar desfoque gaussiano
-blur = cv2.GaussianBlur(gray, (11, 11), 0)
-
-# Aplicar o detector de bordas Canny
-canny = cv2.Canny(blur, 75, 100, apertureSize=3)
-
-# Dilatar as bordas para conectar regiões
-dilated = cv2.dilate(canny, (1, 1), iterations=0)
-
-# Encontrar os contornos na imagem dilatada
-(cnt, hierarchy) = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-# Parâmetros para o filtro de tamanho (em pixels)
-min_area = 0  # Tamanho mínimo para uma célula (ajustado para marrons)
-max_area = 100  # Tamanho máximo para uma célula (ajustado para azuis)
-min_circularity = 0.01 # Circularidade mínima (1 = círculo perfeito)
-
-# Filtrar contornos com base no tamanho e circularidadea
-filtered_contours = []
-for contour in cnt:
-    area = cv2.contourArea(contour)
-    perimeter = cv2.arcLength(contour, True)  # True para contornos fechados
-    
-    if perimeter > 0:  # Prevenir divisão por zero
-        circularity = (4 * np.pi * area) / (perimeter ** 2)
+    # Filtrar contornos com base no tamanho e circularidade
+    filtered_contours = []
+    for contour in cnt:
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)  # True para contornos fechados
         
-        # Aplicar filtros de área e circularidade
-        if min_area <= area <= max_area and circularity >= min_circularity:
-            filtered_contours.append(contour)
+        if perimeter > 0:  # Prevenir divisão por zero
+            circularity = (4 * np.pi * area) / (perimeter ** 2)
+            
+            # Aplicar filtros de área e circularidade
+            if perimeter_min <= area <= perimeter_max and circularity >= min_circularity:
+                filtered_contours.append(contour)
 
-# Desenhar os contornos filtrados na imagem original
-rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-cv2.drawContours(rgb, filtered_contours, -1, (0, 255, 0), 2)
+    # Desenhar os contornos filtrados na imagem original
+    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    cv2.drawContours(rgb, filtered_contours, -1, (0, 255, 0), 2)
 
-# Exibir a imagem original com os contornos desenhados
-plt.figure(figsize=(60, 40))
-plt.imshow(rgb)
-plt.axis('off')
+    # Exibir a imagem original com os contornos desenhados
+    # plt.figure(figsize=(60, 40))
+    # plt.imshow(rgb)
+    # plt.axis('off')
 
-# Contar e imprimir o número de células dentro do intervalo de tamanho e circularidade
-print("Cells in the image with size and circularity criteria: ", len(filtered_contours))
+    # Contar e imprimir o número de células dentro do intervalo de tamanho e circularidade
+    return len(filtered_contours)
