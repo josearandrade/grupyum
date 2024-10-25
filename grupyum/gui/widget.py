@@ -64,17 +64,14 @@ class Widget(QWidget):
         files, _ = QFileDialog.getOpenFileNames(self, "Select images", "", "Images (*.png *.jpg *.jpeg *.bmp *.tif)")
 
         if files:
-            # Salva os caminhos das imagens selecionadas
+            # Salva os caminhos das imagens selecionadas e os nomes dos arquivos
             self.image_paths = files
+            self.file_names = [os.path.basename(file) for file in files]  # Lista com os nomes dos arquivos
 
-            # Limpa a lista anterior, se houver
+            # Limpa a lista anterior e adiciona os novos nomes ao QListWidget
             self.ui.list_selected_images.clear()
-
-            # Adiciona os nomes das imagens no QListWidget
-            for file in files:
-                self.file_name = os.path.basename(file)  # Extrai apenas o nome do arquivo
-                self.file_names = self.file_name
-                QListWidgetItem(self.file_name, self.ui.list_selected_images)
+            for file_name in self.file_names:
+                QListWidgetItem(file_name, self.ui.list_selected_images)
 
     def load_images(self):
         # Verifica se há imagens selecionadas
@@ -88,48 +85,48 @@ class Widget(QWidget):
                 self.ui.load_OK.show()  # Mostra a QLabel
 
     def full_processing(self):
-        self.results = []  # Inicializa uma lista para armazenar resultados
-        for image in self.images:  # Percorre cada imagem na lista de imagens
-            if sett.GOOD_CONDITION == 1:  # Verifica se a condição é boa
-                # Blue cells processing
+        self.results = []  
+        total_images = len(self.images)
+        for idx, image in enumerate(self.images):  # Usa 'enumerate' para obter o índice da imagem
+            image_name = self.file_names[idx]  # Pega o nome correto usando o índice
+            
+            # Atualiza a barra de progresso
+            progress = int((idx + 1) / total_images * 100)
+            self.ui.progressBar.setValue(progress)
+
+            if sett.GOOD_CONDITION == 1:
+                # Processamento das células azuis
                 blue_lower_bound, blue_upper_bound = color_thresholding_limits(
-                    self.ui.bluecell_LR.value(),  # Use .value() para obter os valores inteiros
-                    self.ui.bluecell_LG.value(),
-                    self.ui.bluecell_LB.value(),
-                    self.ui.bluecell_UR.value(),
-                    self.ui.bluecell_UG.value(),
-                    self.ui.bluecell_UB.value()
+                    self.ui.bluecell_LR.value(), self.ui.bluecell_LG.value(),
+                    self.ui.bluecell_LB.value(), self.ui.bluecell_UR.value(),
+                    self.ui.bluecell_UG.value(), self.ui.bluecell_UB.value()
                 )
-                
-                # Aplica o thresholding à imagem
                 masked_image = masks_apply(image, blue_lower_bound, blue_upper_bound)
-                
-                # Processa a imagem mascarada (supondo que a função `processing_img` está definida)
-                blue_results = processing_img(masked_image, self.ui.edge_canny_lower.value(), self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), self.ui.perimeter_max.value(), self.ui.min_circularity.value())
-                
-                # Blue cells processing
-                brown_lower_bound, brown_upper_bound = color_thresholding_limits(
-                    self.ui.browncell_LR.value(),  # Use .value() para obter os valores inteiros
-                    self.ui.browncell_LG.value(),
-                    self.ui.browncell_LB.value(),
-                    self.ui.browncell_UR.value(),
-                    self.ui.browncell_UG.value(),
-                    self.ui.browncell_UB.value()
+                blue_results = processing_img(
+                    masked_image, self.ui.edge_canny_lower.value(), 
+                    self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), 
+                    self.ui.perimeter_max.value(), self.ui.min_circularity.value()
                 )
-                
-                # Aplica o thresholding à imagem
+
+                # Processamento das células marrons
+                brown_lower_bound, brown_upper_bound = color_thresholding_limits(
+                    self.ui.browncell_LR.value(), self.ui.browncell_LG.value(),
+                    self.ui.browncell_LB.value(), self.ui.browncell_UR.value(),
+                    self.ui.browncell_UG.value(), self.ui.browncell_UB.value()
+                )
                 masked_image = masks_apply(image, brown_lower_bound, brown_upper_bound)
+                brown_results = processing_img(
+                    masked_image, self.ui.edge_canny_lower.value(), 
+                    self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), 
+                    self.ui.perimeter_max.value(), self.ui.min_circularity.value()
+                )
 
-                brown_results = processing_img(masked_image, self.ui.edge_canny_lower.value(), self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), self.ui.perimeter_max.value(), self.ui.min_circularity.value())
+                # Formatação do texto do resultado para exibir no QListWidget
+                result_text = f"Image: {image_name} | Brown: {brown_results} | Blue: {blue_results}  | Total: {blue_results + brown_results}"
 
-                # Adiciona o resultado à lista de resultados
-
-                # Formata a string para exibir no QListWidget
-                result_text = f"Image: {self.file_names} | Blue: {blue_results} | Brown: {brown_results} | Total: {blue_results+brown_results}"
-
-                # A função QListWidgetItem deve ser usada para adicionar um item à QListWidget
-                item = QListWidgetItem(result_text)  # Converte resultados em string, se necessário
-                self.ui.list_results.addItem(item)  # Adiciona o item à QListWidget
+                # Criação e adição do item de resultado à lista
+                item = QListWidgetItem(result_text)
+                self.ui.list_results.addItem(item)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
