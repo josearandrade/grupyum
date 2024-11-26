@@ -52,7 +52,6 @@ Development Environment: VSCodium (vscode fork project) with virtualenv for depe
 - cv2.contourArea
 - cv2.arcLength
   - circularity and perimeter limits
-- cv2.cvtColor(BGR2RGB)
 - cv2.drawContours
 
 

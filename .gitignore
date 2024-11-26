@@ -1,16 +1,16 @@
 # Project dependencies
-grupyum/images/*
-!grupyum/images/.gitkeep
+images/*
+!images/.gitkeep
 
-grupyum/data/*
-!grupyum/data/.gitkeep
+data/*
+!data/.gitkeep
 
-grupyum/gui/*
-!grupyum/gui/__init__.py
-!grupyum/gui/widget.py
-!grupyum/gui/ui_form.py
+gui/*
+!gui/__init__.py
+!gui/widget.py
+!gui/ui_form.py
 
-grupyum/tests/
+tests/
 
 
 # Byte-compiled / optimized / DLL files
