@@ -10,7 +10,7 @@ This application was developed by Biomedical Informatics students at the Univers
 - [About](#about)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Features](#features)
+- [Processing](#processing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
@@ -54,7 +54,6 @@ Development Environment: VSCodium (vscode fork project) with virtualenv for depe
   - circularity and perimeter limits
 - cv2.drawContours
 
-
 ## Installation
 
 ### Prerequisites
@@ -84,7 +83,28 @@ Development Environment: VSCodium (vscode fork project) with virtualenv for depe
    python gui/widget.py
    ```
 
-## Features
+
+
+
+
+## Processing
+
+
+- cv2.imread
+- cv2.cvtcolor (BGR2RGB)
+- color thresholding (lower and upper RGB)
+- cv2.inRange
+- cv2.bitwise_and
+- plt.figure
+- cv2.cvtColor (BGR2GRAY)
+- cv2.GaussianBlur
+- cv2.Canny
+- cv2.dilate
+- cv2.findContours
+- cv2.contourArea
+- cv2.arcLength
+  - circularity and perimeter limits
+- cv2.drawContours
 
 ## License
 

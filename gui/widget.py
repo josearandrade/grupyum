@@ -27,12 +27,6 @@ class Widget(QWidget):
         # Variável para armazenar os caminhos das imagens selecionadas
         self.image_paths = []
         self.file_names = []
-
-        # Conectar o botão ao método para carregar as imagens
-        self.ui.loadButton.clicked.connect(self.load_images)
-
-        # Inicialmente, esconder a QLabel
-        self.ui.load_OK.hide()  # Esconder a QLabel até que o carregamento seja concluído
         
         # Conectar o botão ao método para carregar as imagens
         self.ui.processButton.clicked.connect(self.full_processing)
@@ -40,24 +34,25 @@ class Widget(QWidget):
         # Exporta em um arquivo json
         self.ui.exportButton.clicked.connect(self.export_to_excel)
 
+        # Botão de reset
+        self.ui.resetButton.clicked.connect(self.clear_results)
+
         # Settings values 
         ## Color Thresholding
-        self.ui.browncell_LR.setValue(sett.BROWN_CELL_LR)
-        self.ui.browncell_LG.setValue(sett.BROWN_CELL_LG)
-        self.ui.browncell_LB.setValue(sett.BROWN_CELL_LB)
-        self.ui.browncell_UR.setValue(sett.BROWN_CELL_UR)
-        self.ui.browncell_UG.setValue(sett.BROWN_CELL_UG)
-        self.ui.browncell_UB.setValue(sett.BROWN_CELL_UB)
-        self.ui.bluecell_LR.setValue(sett.BLUE_CELL_LR)
-        self.ui.bluecell_LG.setValue(sett.BLUE_CELL_LG)
-        self.ui.bluecell_LB.setValue(sett.BLUE_CELL_LB)
-        self.ui.bluecell_UR.setValue(sett.BLUE_CELL_UR)
-        self.ui.bluecell_UG.setValue(sett.BLUE_CELL_UG)
-        self.ui.bluecell_UB.setValue(sett.BLUE_CELL_UB)
+        self.ui.brownmarker_LR.setValue(sett.BROWN_MARKER_LR)
+        self.ui.brownmarker_LG.setValue(sett.BROWN_MARKER_LG)
+        self.ui.brownmarker_LB.setValue(sett.BROWN_MARKER_LB)
+        self.ui.brownmarker_UR.setValue(sett.BROWN_MARKER_UR)
+        self.ui.brownmarker_UG.setValue(sett.BROWN_MARKER_UG)
+        self.ui.brownmarker_UB.setValue(sett.BROWN_MARKER_UB)
+        self.ui.bluemarker_LR.setValue(sett.BLUE_MARKER_LR)
+        self.ui.bluemarker_LG.setValue(sett.BLUE_MARKER_LG)
+        self.ui.bluemarker_LB.setValue(sett.BLUE_MARKER_LB)
+        self.ui.bluemarker_UR.setValue(sett.BLUE_MARKER_UR)
+        self.ui.bluemarker_UG.setValue(sett.BLUE_MARKER_UG)
+        self.ui.bluemarker_UB.setValue(sett.BLUE_MARKER_UB)
+
         
-        ## Edge Canny
-        self.ui.edge_canny_lower.setValue(sett.EDGE_CANNY_LOWER)
-        self.ui.edge_canny_upper.setValue(sett.EDGE_CANNY_UPPER)
 
         ## Perimeter
         self.ui.perimeter_min.setValue(sett.PERIMETER_MIN)
@@ -78,19 +73,13 @@ class Widget(QWidget):
             for file_name in self.file_names:
                 QListWidgetItem(file_name, self.ui.list_selected_images)
 
-    def load_images(self):
-        # Verifica se há imagens selecionadas
-        if self.image_paths:
-            self.images = load_image_rgb(self.image_paths)  # Carrega as imagens e retorna a lista de imagens
-            if self.images:  # Verifica se alguma imagem foi carregada
-                self.ui.load_OK.setText("Load OK")  # Atualiza o texto da QLabel
-                self.ui.load_OK.show()  # Mostra a QLabel
-            else:
-                self.ui.load_OK.setText("Erro ao carregar as imagens")
-                self.ui.load_OK.show()  # Mostra a QLabel
-
     # Função para processar imagens e adicionar itens clicáveis à lista de resultados
     def full_processing(self):
+
+        if self.image_paths:
+            self.images = load_image_rgb(self.image_paths)  # Carrega as imagens e retorna a lista de imagens
+            
+
         self.results = []  # Armazena os resultados como dicionários para exportação organizada
         total_images = len(self.images)
         
@@ -104,35 +93,33 @@ class Widget(QWidget):
             if sett.GOOD_CONDITION == 1:
                 # Processamento das células azuis
                 blue_lower_bound, blue_upper_bound = color_thresholding_limits(
-                    self.ui.bluecell_LR.value(), self.ui.bluecell_LG.value(),
-                    self.ui.bluecell_LB.value(), self.ui.bluecell_UR.value(),
-                    self.ui.bluecell_UG.value(), self.ui.bluecell_UB.value()
+                    self.ui.bluemarker_LR.value(), self.ui.bluemarker_LG.value(),
+                    self.ui.bluemarker_LB.value(), self.ui.bluemarker_UR.value(),
+                    self.ui.bluemarker_UG.value(), self.ui.bluemarker_UB.value()
                 )
                 masked_image = masks_apply(image, blue_lower_bound, blue_upper_bound)
                 blue_results = processing_img(
-                    masked_image, self.ui.edge_canny_lower.value(),
-                    self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), 
+                    masked_image, 75, 100, self.ui.perimeter_min.value(), 
                     self.ui.perimeter_max.value(), self.ui.min_circularity.value()
                 )
 
                 # Processamento das células marrons
                 brown_lower_bound, brown_upper_bound = color_thresholding_limits(
-                    self.ui.browncell_LR.value(), self.ui.browncell_LG.value(),
-                    self.ui.browncell_LB.value(), self.ui.browncell_UR.value(),
-                    self.ui.browncell_UG.value(), self.ui.browncell_UB.value()
+                    self.ui.brownmarker_LR.value(), self.ui.brownmarker_LG.value(),
+                    self.ui.brownmarker_LB.value(), self.ui.brownmarker_UR.value(),
+                    self.ui.brownmarker_UG.value(), self.ui.brownmarker_UB.value()
                 )
                 masked_image = masks_apply(image, brown_lower_bound, brown_upper_bound)
                 brown_results = processing_img(
-                    masked_image, self.ui.edge_canny_lower.value(), 
-                    self.ui.edge_canny_upper.value(), self.ui.perimeter_min.value(), 
+                    masked_image, 75, 100, self.ui.perimeter_min.value(), 
                     self.ui.perimeter_max.value(), self.ui.min_circularity.value()
                 )
                 percentage = round(((brown_results/(blue_results + brown_results))*100), 2)
                 # Salva cada campo como uma chave-valor no dicionário
                 result_entry = {
                     "Image": image_name,
-                    "Brown Cells": brown_results,
-                    "Blue Cells": blue_results,
+                    "Brown Marker": brown_results,
+                    "Blue Marker": blue_results,
                     "Total": blue_results + brown_results,
                     "Percentage +": percentage
                 }
@@ -171,6 +158,12 @@ class Widget(QWidget):
                     print(f"Erro ao exportar para {filename}: {e}")
             else:
                 print("Exportação cancelada pelo usuário.")
+
+    def clear_results(self):
+        self.ui.list_results.clear()  # Limpa os itens da QListWidget na interface
+        self.results = []  # Reseta a lista de resultados
+        self.ui.progressBar.setValue(0)  # Reseta a barra de progresso para 0
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
